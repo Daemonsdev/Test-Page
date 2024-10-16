@@ -14,25 +14,6 @@ app.use(bodyParser.json());
 const VERIFY_TOKEN = 'pagebot';
 const PAGE_ACCESS_TOKEN = fs.readFileSync('token.txt', 'utf8').trim();
 
-const setGetStartedButton = async () => {
-    const url = `https://graph.facebook.com/v12.0/me/messenger_profile?access_token=${PAGE_ACCESS_TOKEN}`;
-    const data = {
-        get_started: {
-            payload: 'GET_STARTED'
-        }
-    };
-
-    try {
-        const response = await axios.post(url, data);
-        console.log('Get Started Button Set:', response.data);
-    } catch (error) {
-        console.error('Error setting Get Started button:', error.response ? error.response.data : error.message);
-    }
-};
-
-// Initialize Get Started button
-setGetStartedButton();
-
 app.get('/webhook', (req, res) => {
   const mode = req.query['hub.mode'];
   const token = req.query['hub.verify_token'];
@@ -60,11 +41,6 @@ app.post('/webhook', async (req, res) => {
         handleMessage(webhookEvent, PAGE_ACCESS_TOKEN);
       } else if (webhookEvent.postback) {
         handlePostback(webhookEvent, PAGE_ACCESS_TOKEN);
-
-        if (webhookEvent.postback.payload === "GET_STARTED" || webhookEvent.postback.payload === "GET_STARTED_PAYLOAD") {
-          await sendMessage(senderId, { text: "Welcome! How can I assist you today?" }, PAGE_ACCESS_TOKEN);
-          await sendQuickReplies(senderId);  // Send quick replies after welcome message
-        }
       }
     }
     res.status(200).send('EVENT_RECEIVED');
@@ -85,26 +61,6 @@ async function sendMessage(senderId, message, pageAccessToken) {
   } catch (error) {
     console.error('Error sending message:', error.message);
   }
-}
-
-async function sendQuickReplies(senderId) {
-  const quickReplies = [
-    {
-      content_type: "text",
-      title: "Get Help",
-      payload: "GET_HELP",
-    },
-    {
-      content_type: "text",
-      title: "Ask AI",
-      payload: "ASK_AI",
-    },
-  ];
-
-  await sendMessage(senderId, {
-    text: "What would you like to do?",
-    quick_replies: quickReplies,
-  }, PAGE_ACCESS_TOKEN);
 }
 
 // Automatically load commands from the 'commands' folder
@@ -147,4 +103,4 @@ app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
   loadMenuCommands();
 });
-        
+                           
