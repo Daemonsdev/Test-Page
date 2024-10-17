@@ -2,36 +2,40 @@ const axios = require('axios');
 
 module.exports = {
   name: 'ai',
-  description: 'Interact with HeruBot AI to get responses based on user-provided prompts.',
-  author: 'Jay',
-
+  description: 'Ask a question to Heru Bot',
+  author: 'Jay Mar',
   async execute(senderId, args, pageAccessToken, sendMessage) {
-    const userPrompt = args.join(' ');
-    
-    if (!userPrompt) {
-      sendMessage(senderId, { text: '🌟 Please provide a prompt for HeruBot AI to respond to.' }, pageAccessToken);
-      return;
-    }
-
-    const basePrompt = `You're name is HeruBot, You're created by Jay Mar, you have no model, you're a helpful assistant.`;
+    const prompt = args.join(' ');
 
     try {
-      const apiUrl = `https://www.geo-sevent-tooldph.site/api/gpt4?prompt=${encodeURIComponent(basePrompt)}`;
+      const apiUrl = `https://heru-ai-1kgm.vercel.app/heru?prompt=${encodeURIComponent(prompt)}`;
       const response = await axios.get(apiUrl);
+      const text = response.data.response || 'No response received from the Heru API. Please try again later.';
+      const guide = '\n\n◉ Guide: Type "help" to see all available commands';
 
-      const result = response.data.response;
+      console.log('API Response:', text);
 
-      const botResponse = typeof result === 'string'
-        ? result
-        : (typeof result === 'object' && result !== null)
-          ? Object.values(result).join(' ')
-          : "No response received from Heru AI. 🤖";
-
-      sendMessage(senderId, { text: `HeruBot 🤖: ${botResponse} 😊` }, pageAccessToken);
-
+      const maxMessageLength = 2000;
+      const finalText = text + guide;
+      if (finalText.length > maxMessageLength) {
+        const messages = splitMessageIntoChunks(finalText, maxMessageLength);
+        for (const message of messages) {
+          sendMessage(senderId, { text: message }, pageAccessToken);
+        }
+      } else {
+        sendMessage(senderId, { text: finalText }, pageAccessToken);
+      }
     } catch (error) {
-      console.error('Error calling Heru AI: 😔', error);
+      console.error('Error calling Heru API:', error);
       sendMessage(senderId, { text: 'Sorry, there was an error processing your request.' }, pageAccessToken);
     }
   }
 };
+
+function splitMessageIntoChunks(message, chunkSize) {
+  const chunks = [];
+  for (let i = 0; i < message.length; i += chunkSize) {
+    chunks.push(message.slice(i, i + chunkSize));
+  }
+  return chunks;
+      }
