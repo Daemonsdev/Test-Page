@@ -2,11 +2,18 @@ const axios = require('axios');
 
 module.exports = {
   name: 'ai',
-  description: 'Interact with HeruBot AI to get responses based on a given context.',
+  description: 'Interact with HeruBot AI to get responses based on user-provided prompts.',
   author: 'Jay',
 
   async execute(senderId, args, pageAccessToken, sendMessage) {
-    const basePrompt = `You're name is HeruBot, You're created by Jay Mar, you have no model you're a helpful assistant.`;
+    const userPrompt = args.join(' ');
+    
+    if (!userPrompt) {
+      sendMessage(senderId, { text: '🌟 Please provide a prompt for HeruBot AI to respond to.' }, pageAccessToken);
+      return;
+    }
+
+    const basePrompt = `You're name is HeruBot, You're created by Jay Mar, you have no model, you're a helpful assistant.`;
 
     try {
       const apiUrl = `https://www.geo-sevent-tooldph.site/api/gpt4?prompt=${encodeURIComponent(basePrompt)}`;
