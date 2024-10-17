@@ -2,7 +2,7 @@ const axios = require('axios');
 
 module.exports = {
   name: 'ai',
-  description: 'Ask a question to Heru Bot',
+  description: 'Automatically respond to any message using Heru Bot',
   author: 'Jay Mar',
   async execute(senderId, args, pageAccessToken, sendMessage) {
     const prompt = args.join(' ');
@@ -38,4 +38,4 @@ function splitMessageIntoChunks(message, chunkSize) {
     chunks.push(message.slice(i, i + chunkSize));
   }
   return chunks;
-      }
+                               }
