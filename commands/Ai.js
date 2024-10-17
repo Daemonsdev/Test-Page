@@ -2,27 +2,38 @@ const axios = require('axios');
 
 module.exports = {
   name: 'ai',
-  description: 'Generate response from Heru AI',
-  author: 'Jay',
-
+  description: 'Talk to herubot Ai',
+  author: 'Nics (rest api)',
   async execute(senderId, args, pageAccessToken, sendMessage) {
     const prompt = args.join(' ');
-    if (!prompt) {
-      sendMessage(senderId, { text: '🤖 Hello, how can i add you today?' }, pageAccessToken);
-      return;
-    }
-
     try {
       const apiUrl = `https://heru-ai-1kgm.vercel.app/heru?prompt=${encodeURIComponent(prompt)}`;
       const response = await axios.get(apiUrl);
+      const text = response.data.response;
 
-      const text = response.data.response || 'No response received from Heru AI. Please try again later.';
+console.log('API Response:', text);
 
-      sendMessage(senderId, { text }, pageAccessToken);
-
+      // Split the response into chunks if it exceeds 2000 characters
+      const maxMessageLength = 2000;
+      if (text.length > maxMessageLength) {
+        const messages = splitMessageIntoChunks(text, maxMessageLength);
+        for (const message of messages) {
+          sendMessage(senderId, { text: message }, pageAccessToken);
+        }
+      } else {
+        sendMessage(senderId, { text }, pageAccessToken);
+      }
     } catch (error) {
-      console.error('Error calling Heru AI API:', error);
+      console.error('Error calling HeruBot Ai:', error);
       sendMessage(senderId, { text: 'Sorry, there was an error processing your request.' }, pageAccessToken);
     }
   }
 };
+
+function splitMessageIntoChunks(message, chunkSize) {
+  const chunks = [];
+  for (let i = 0; i < message.length; i += chunkSize) {
+    chunks.push(message.slice(i, i + chunkSize));
+  }
+  return chunks;
+       }
