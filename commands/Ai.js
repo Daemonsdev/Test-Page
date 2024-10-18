@@ -1,30 +1,28 @@
 const axios = require('axios');
+const { sendMessage } = require('../handles/sendMessage');
+const fs = require('fs');
+
+const token = fs.readFileSync('token.txt', 'utf8');
 
 module.exports = {
   name: 'ai',
-  description: 'Generate response from AI',
-  author: 'Jay',
+  description: 'Talking to heru bot ai',
+  author: 'heru',
 
-  async execute(senderId, args, pageAccessToken, sendMessage) {
-    const prompt = args.join(' ');
-    if (!prompt) {
-      sendMessage(senderId, {
-        text: `Hello, I'm Heru Bot 🤖, your virtual assistant, ready to help with whatever you need! Whether it's answering questions, solving problems, or offering guidance, I'm here for you. How can I assist you today? 😊`
-      }, pageAccessToken);
-      return;
-    }
+  async execute(senderId, args) {
+    const pageAccessToken = token;
+    const input = (args.join(' ') || 'hi').trim();
+    const modifiedPrompt = `${input}`;
 
     try {
-      const apiUrl = `https://heru-ai-1kgm.vercel.app/heru?prompt=${encodeURIComponent(prompt)}`;
-      const response = await axios.get(apiUrl);
+      const response = await axios.get(`https://heru-ai-1kgm.vercel.app/heru?prompt=${encodeURIComponent(modifiedPrompt)}`);
+      const data = response.data;
+      const formattedMessage = `${response.data.response}`;
 
-      const text = response.data.response || 'No response received from the AI. Please try again later.';
-
-      sendMessage(senderId, { text }, pageAccessToken);
-
+      await sendMessage(senderId, { text: formattedMessage }, pageAccessToken);
     } catch (error) {
-      console.error('Error calling AI API:', error);
-      sendMessage(senderId, { text: 'Sorry, there was an error processing your request.' }, pageAccessToken);
+      console.error('Error:', error);
+      await sendMessage(senderId, { text: 'Error: Unexpected error.' }, pageAccessToken);
     }
   }
 };
