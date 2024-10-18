@@ -2,38 +2,61 @@ const axios = require('axios');
 
 module.exports = {
   name: 'ai',
-  description: 'Talk to herubot Ai',
-  author: 'Nics (rest api)',
+  description: 'Pose une question à AIchat',
+  author: 'Deku (rest api)',
+  hasPrefix: false, // Le bot écoutera les messages sans avoir besoin d'un préfixe
   async execute(senderId, args, pageAccessToken, sendMessage) {
     const prompt = args.join(' ');
+
+    if (!prompt) {
+      return sendMessage(senderId, { text: "Veuillez entrer une question valide." }, pageAccessToken);
+    }
+
     try {
-      const apiUrl = `https://heru-ai-1kgm.vercel.app/heru?prompt=${encodeURIComponent(prompt)}`;
+      // Envoyer un message indiquant que AIchat est en train de répondre
+      await sendMessage(senderId, { text: '💬AIchat est en train de te répondre ⏳...\n\n─────★─────' }, pageAccessToken);
+
+      // URL de l'API AIchat
+      const apiUrl = `https://www.samirxpikachu.run.place/gemini?text=${encodeURIComponent(prompt)}&system=default&uid=${senderId}`;
       const response = await axios.get(apiUrl);
-      const text = response.data.response;
 
-console.log('API Response:', text);
+      const { candidates } = response.data;
 
-      // Split the response into chunks if it exceeds 2000 characters
-      const maxMessageLength = 2000;
-      if (text.length > maxMessageLength) {
-        const messages = splitMessageIntoChunks(text, maxMessageLength);
-        for (const message of messages) {
-          sendMessage(senderId, { text: message }, pageAccessToken);
+      if (candidates && candidates.length > 0) {
+        const replyText = candidates[0].content.parts[0].text;
+
+        // Créer un style avec un contour pour la réponse de AIchat
+        const formattedResponse = `─────★─────\n` +
+                                  `✨🌏AIchat🇲🇬\n\n${replyText}\n` +
+                                  `─────★─────`;
+
+        // Gérer les réponses longues de plus de 2000 caractères
+        const maxMessageLength = 2000;
+        if (formattedResponse.length > maxMessageLength) {
+          const chunks = splitMessageIntoChunks(formattedResponse, maxMessageLength);
+          for (const chunk of chunks) {
+            await sendMessage(senderId, { text: chunk }, pageAccessToken);
+          }
+        } else {
+          await sendMessage(senderId, { text: formattedResponse }, pageAccessToken);
         }
       } else {
-        sendMessage(senderId, { text }, pageAccessToken);
+        await sendMessage(senderId, { text: 'Désolé, aucune réponse de AIchat.' }, pageAccessToken);
       }
+
     } catch (error) {
-      console.error('Error calling HeruBot Ai:', error);
-      sendMessage(senderId, { text: 'Sorry, there was an error processing your request.' }, pageAccessToken);
+      console.error('Error calling AI API:', error);
+      // Message de réponse d'erreur
+      await sendMessage(senderId, { text: 'Désolé, une erreur est survenue. Veuillez réessayer plus tard.' }, pageAccessToken);
     }
   }
 };
 
+// Fonction pour découper les messages en morceaux de 2000 caractères
 function splitMessageIntoChunks(message, chunkSize) {
   const chunks = [];
   for (let i = 0; i < message.length; i += chunkSize) {
     chunks.push(message.slice(i, i + chunkSize));
   }
   return chunks;
-       }
+}
