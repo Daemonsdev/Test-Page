@@ -1,28 +1,39 @@
 const axios = require('axios');
-const { sendMessage } = require('../handles/sendMessage');
-const fs = require('fs');
-
-const token = fs.readFileSync('token.txt', 'utf8');
 
 module.exports = {
   name: 'ai',
   description: 'Talking to heru bot ai',
   author: 'heru',
-
-  async execute(senderId, args) {
-    const pageAccessToken = token;
-    const input = (args.join(' ') || 'hi').trim();
-    const modifiedPrompt = `${input}`;
-
+  async execute(senderId, args, pageAccessToken, sendMessage) {
+    const prompt = args.join(' ');
     try {
-      const response = await axios.get(`https://heru-ai-1kgm.vercel.app/heru?prompt=${encodeURIComponent(modifiedPrompt)}`);
-      const data = response.data;
-      const formattedMessage = `${response.data.response}`;
+      const apiUrl = `https://heru-ai-1kgm.vercel.app/heru?prompt=${encodeURIComponent(prompt)}&uid=100${senderId}`;
+      const response = await axios.get(apiUrl);
+      const text = response.data.response;
 
-      await sendMessage(senderId, { text: formattedMessage }, pageAccessToken);
+console.log('API Response:', text);
+
+      // Split the response into chunks if it exceeds 2000 characters
+      const maxMessageLength = 2000;
+      if (text.length > maxMessageLength) {
+        const messages = splitMessageIntoChunks(text, maxMessageLength);
+        for (const message of messages) {
+          sendMessage(senderId, { text: message }, pageAccessToken);
+        }
+      } else {
+        sendMessage(senderId, { text }, pageAccessToken);
+      }
     } catch (error) {
-      console.error('Error:', error);
-      await sendMessage(senderId, { text: 'Error: Unexpected error.' }, pageAccessToken);
+      console.error('Error calling GPT-4 API:', error);
+      sendMessage(senderId, { text: 'Sorry, there was an error processing your request.' }, pageAccessToken);
     }
   }
 };
+
+function splitMessageIntoChunks(message, chunkSize) {
+  const chunks = [];
+  for (let i = 0; i < message.length; i += chunkSize) {
+    chunks.push(message.slice(i, i + chunkSize));
+  }
+  return chunks;
+}
