@@ -28,12 +28,12 @@ async function handleMessage(event, pageAccessToken) {
     return;
   }
 
-  const aiCommand = commands.get('ai');
-  if (aiCommand) {
+  const hiCommand = commands.get('hi');
+  if (hiCommand) {
     try {
-      await aiCommand.execute(senderId, messageText, pageAccessToken, sendMessage);
+      await hiCommand.execute(senderId, messageText, pageAccessToken, sendMessage);
     } catch (error) {
-      console.error('Error executing Ai command:', error);
+      console.error('Error executing hi command:', error);
       sendMessage(senderId, { text: 'There was an error processing your request.' }, pageAccessToken);
     }
   }
