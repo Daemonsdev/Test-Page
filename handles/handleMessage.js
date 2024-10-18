@@ -28,17 +28,7 @@ async function handleMessage(event, pageAccessToken) {
     return;
   }
 
-  const aiCommand = commands.get('ai');
-  if (aiCommand) {
-    try {
-      await aiCommand.execute(senderId, messageText, pageAccessToken, sendMessage);
-    } catch (error) {
-      console.error('Error executing ai command:', error);
-      sendMessage(senderId, { text: 'There was an error processing your request.' }, pageAccessToken);
-    }
-  }
-}
-
+  
 module.exports = { handleMessage };
 
                             
