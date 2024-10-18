@@ -5,7 +5,7 @@ const fs = require('fs');
 const token = fs.readFileSync('token.txt', 'utf8');
 
 module.exports = {
-  name: 'ai',
+  name: 'heru',
   description: 'Talking to heru bot ai',
   author: 'heru',
 
