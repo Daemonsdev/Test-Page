@@ -12,6 +12,9 @@ app.use(bodyParser.json());
 
 const VERIFY_TOKEN = 'pagebot';
 const PAGE_ACCESS_TOKEN = fs.readFileSync('token.txt', 'utf8').trim();
+const cmdLoc = path.join(__dirname, 'commands');
+const commands = [];
+const descriptions = [];
 
 // Function to send a message via Messenger API
 async function sendMessage(senderId, message, pageAccessToken) {
@@ -79,16 +82,23 @@ const getStarted = async (send) => send({
   }
 });
 
-// Automatically load commands from the 'commands' folder and post them to Messenger API
-const loadMenuCommands = async () => {
-  try {
-    const commandsDir = path.join(__dirname, 'commands');
-    const commandFiles = fs.readdirSync(commandsDir).filter(file => file.endsWith('.js'));
-
-    const commandsList = commandFiles.map(file => {
-      const command = require(path.join(commandsDir, file));
-      return { name: command.name, description: command.description || 'No description available' };
-    });
+// loadCommands function without the prefix
+async function loadCommands() {
+  const commandsPayload = [];
+  fs.readdir(cmdLoc, {}, async (err, files) => {
+    for await (const name of files) {
+      const readCommand = require(path.join(cmdLoc, name));
+      const commandName = readCommand.name || name.replace(".js", "").toLowerCase();
+      const description = readCommand.description || "No description provided.";
+      commands.push(commandName);
+      descriptions.push(description);
+      commandsPayload.push({
+        name: commandName,  // Removed the prefix here
+        description
+      });
+      console.log(commandName, "Loaded");
+    }
+    console.log("Wait...");
 
     const dataCmd = await axios.get(`https://graph.facebook.com/v21.0/me/messenger_profile`, {
       params: {
@@ -97,15 +107,17 @@ const loadMenuCommands = async () => {
       }
     });
 
-    if (dataCmd.data.data[0].commands[0].commands.length === commandsList.length) {
+    // Check if commands already match
+    if (dataCmd.data.data[0].commands[0].commands.length === commandsPayload.length) {
       return console.log("Commands not changed");
     }
 
+    // Post the new commands
     const loadCmd = await axios.post(`https://graph.facebook.com/v21.0/me/messenger_profile?access_token=${PAGE_ACCESS_TOKEN}`, {
       commands: [
         {
           locale: "default",
-          commands: commandsList
+          commands: commandsPayload
         }
       ]
     }, {
@@ -119,10 +131,8 @@ const loadMenuCommands = async () => {
     } else {
       console.log("Failed to load commands");
     }
-  } catch (error) {
-    console.error('Error loading commands:', error);
-  }
-};
+  });
+}
 
 app.get('/webhook', (req, res) => {
   const mode = req.query['hub.mode'];
@@ -168,6 +178,6 @@ const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
-  loadMenuCommands();
+  loadCommands();  // Load commands when server starts
 });
-        
+  
