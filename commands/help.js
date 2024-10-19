@@ -1,40 +1,68 @@
+const fs = require('fs');
+const path = require('path');
+
 module.exports = {
-  description: "See available commands",
-  async run({ api, send }) {
-    const quick_replies = [];
-    
-    // Iterate over the available commands and prepare the quick replies
-    api.commands.forEach((name) => {
-      quick_replies.push({
+  name: 'help',
+  description: 'Show available commands',
+  author: 'System',
+  
+  // Function to send quick replies
+  async sendQuickReplies(senderId, sendMessage) {
+    const quickReplies = [
+      {
         content_type: "text",
-        title: name,  // Removed the prefix here
-        payload: name.toUpperCase()
-      });
+        title: "Get Help",
+        payload: "GET_HELP",
+      },
+      {
+        content_type: "text",
+        title: "Ask AI",
+        payload: "ASK_AI",
+      },
+    ];
+
+    await sendMessage(senderId, {
+      text: "What would you like to do?",
+      quick_replies: quickReplies,
     });
-    
-    try {
-      // Send the quick replies along with the button template
-      send({
-        quick_replies,
-        attachment: {
-          type: "template",
-          payload: {
-            template_type: "button",
-            text: `🤖 | These are the commands available on Wie AI below.
-🔎 | Click each command to see its usage.`,
-            buttons: [
-              {
-                type: "web_url",
-                url: "https://www.facebook.com/Churchill.Dev4100",
-                title: "Contact Admin"
-              }
-            ]
-          }
+  },
+
+  // Main function to execute the 'help' command
+  async execute(senderId, args, pageAccessToken, sendMessage) {
+    const commandsDir = path.join(__dirname, '../commands');
+    const commandFiles = fs.readdirSync(commandsDir).filter(file => file.endsWith('.js'));
+
+    const commands = commandFiles.map(file => {
+      const command = require(path.join(commandsDir, file));
+      return `◉ ${command.name} - ${command.description}`;
+    });
+
+    const totalCommands = commandFiles.length;
+    const helpMessage = `🌟 Available Commands\n━━━━━━━━━━━━━━━━━━\nTotal commands: ${totalCommands}\n\n${commands.join('\n')}\n\n◉ For further assistance, please contact the developer\n◉ Facebook: https://www.facebook.com/jaymar.dev.00`;
+
+    // Prepare the payload for the command list
+    const payload = {
+      text: helpMessage,
+      buttons: [
+        {
+          type: 'postback',
+          title: 'Contact Developer',
+          payload: 'CONTACT_DEVELOPER'
+        },
+        {
+          type: 'web_url',
+          title: 'Visit Facebook',
+          url: 'https://www.facebook.com/jaymar.dev.00',
+          webview_height_ratio: 'full'
         }
-      });
-    } catch (err) {
-      // Handle any errors that occur during the sending process
-      return send(err.message || err);
-    }
+      ]
+    };
+
+    // Send the help message first
+    await sendMessage(senderId, payload, pageAccessToken);
+
+    // Then send the quick replies
+    await this.sendQuickReplies(senderId, sendMessage);
   }
 };
+                                      
