@@ -1,39 +1,35 @@
-const fs = require('fs');
-const path = require('path');
-
 module.exports = {
-  name: 'help',
-  description: 'Show available commands',
-  author: 'System',
-  execute(senderId, args, pageAccessToken, sendMessage) {
-    const commandsDir = path.join(__dirname, '../commands');
-    const commandFiles = fs.readdirSync(commandsDir).filter(file => file.endsWith('.js'));
-
-    const commands = commandFiles.map(file => {
-      const command = require(path.join(commandsDir, file));
-      return `◉ ${command.name} - ${command.description}`;
+  description: "See available commands",
+  async run({ api, send, admin }) {
+    const quick_replies = [];
+    api.commands.forEach((name) => {
+      quick_replies.push({
+        content_type: "text",
+        title: api.prefix + name,
+        payload: name.toUpperCase()
+      });
     });
-
-    const totalCommands = commandFiles.length;
-    const helpMessage = `🌟 Available Commands\n━━━━━━━━━━━━━━━━━━\nTotal commands: ${totalCommands}\n\n${commands.join('\n')}\n\n◉ For further assistance, please contact the developer\n◉ Facebook: https://www.facebook.com/jaymar.dev.00`;
-
-    const payload = {
-      text: helpMessage,
-      buttons: [
-        {
-          type: 'postback',
-          title: 'Contact Developer',
-          payload: 'CONTACT_DEVELOPER'
-        },
-        {
-          type: 'web_url',
-          title: 'Visit Facebook',
-          url: 'https://www.facebook.com/jaymar.dev.00',
-          webview_height_ratio: 'full'
+    try {
+      send({
+        quick_replies,
+        attachment: {
+          type: "template",
+          payload: {
+            template_type: "button",
+            text: `🤖 | These are the commands on Wie AI below.
+🔎 | Click every command to see the usage.`,
+            buttons: [
+              {
+                type: "web_url",
+                url: "https://www.facebook.com/Churchill.Dev4100",
+                title: "Contact Admin"
+              }
+            ]
+          }
         }
-      ]
-    };
-
-    sendMessage(senderId, payload, pageAccessToken);
+      });
+    } catch(err){
+      return send(err.message || err);
+    }
   }
 };
